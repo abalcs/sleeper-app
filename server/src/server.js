@@ -381,7 +381,7 @@ app.get('/api/league/:leagueId/position-totals/:position', async (req, res) => {
 });
 
 // --- Serve Vite build (after API routes)
-const distPath = path.join(__dirname, '..', 'client', 'dist');
+const distPath = path.join(__dirname, '..', '..', 'client', 'dist');
 app.use(express.static(distPath));
 app.get('*', (req, res) => {
   res.sendFile(path.join(distPath, 'index.html'));
