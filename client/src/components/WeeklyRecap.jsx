@@ -10,7 +10,7 @@ export default function WeeklyRecap({ leagueId, week }) {
     (async () => {
       try {
         const r = await fetch(
-          `${import.meta.env.VITE_API_BASE}/api/league/${leagueId}/recap/${week}`
+          `/api/league/${leagueId}/recap/${week}`
         );
         const data = await r.json();
         if (data.recap) {
