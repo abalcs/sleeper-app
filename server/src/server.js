@@ -22,8 +22,8 @@ app.use(cors());
 app.use(express.json());
 
 // --- Serve frontend build ---
-const viteDist = path.join(__dirname, "..", "client", "dist");
-const craBuild = path.join(__dirname, "..", "client", "build");
+const viteDist = path.join(__dirname, "..", "..", "client", "dist");
+const craBuild = path.join(__dirname, "..", "..", "client", "build");
 const hasVite = fs.existsSync(path.join(viteDist, "index.html"));
 const hasCRA = fs.existsSync(path.join(craBuild, "index.html"));
 const distDir = hasVite ? viteDist : hasCRA ? craBuild : null;
