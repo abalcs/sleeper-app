@@ -18,6 +18,14 @@ export default function StandingsTable({ rows }) {
     });
   };
 
+  if (!rows || rows.length === 0) {
+    return (
+      <div className="text-muted p-4 border rounded-md bg-surface">
+        ⚠️ No standings data available.
+      </div>
+    );
+  }
+
   const sortedRows = [...rows].sort((a, b) => {
     const { key, direction } = sortConfig;
     let valA = a[key];
@@ -42,7 +50,7 @@ export default function StandingsTable({ rows }) {
     <div className="overflow-x-auto">
       <table className="w-full min-w-[600px] text-xs sm:text-sm border-collapse table-auto">
         <thead>
-          <tr className="text-left border-b border-border">
+          <tr className="text-left border-b border-border bg-surface">
             <th className="p-1 sm:p-2 whitespace-nowrap">Rank</th>
             <th className="p-1 sm:p-2 whitespace-nowrap">Team</th>
             <th className="p-1 sm:p-2 whitespace-nowrap">Manager</th>
@@ -72,10 +80,13 @@ export default function StandingsTable({ rows }) {
         <tbody>
           {sortedRows.map((row) => {
             const totalGames = row.wins + row.losses + row.ties;
-            const winPct =
-              totalGames > 0 ? (row.wins / totalGames) * 100 : 0;
+            const winPct = totalGames > 0 ? (row.wins / totalGames) * 100 : 0;
+
             return (
-              <tr key={row.roster_id} className="border-b border-border">
+              <tr
+                key={row.roster_id}
+                className="border-b border-border hover:bg-muted/30"
+              >
                 <td className="p-1 sm:p-2">{row.rank}</td>
                 <td className="p-1 sm:p-2">{row.team_name}</td>
                 <td className="p-1 sm:p-2">{row.display_name}</td>
