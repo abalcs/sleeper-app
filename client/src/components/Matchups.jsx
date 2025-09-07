@@ -50,14 +50,14 @@ function TeamCard({ team }) {
       {/* Starters */}
       <div className="overflow-x-auto">
         <h4 className="font-medium mb-1">Starters</h4>
-        <table className="w-full text-xs sm:text-sm mb-2">
+        <table className="min-w-full text-xs sm:text-sm mb-2 border-collapse">
           <thead>
             <tr className="text-left border-b border-border">
-              <th className="p-1">Player</th>
-              <th className="p-1">Pos</th>
-              <th className="p-1">Team</th>
-              <th className="p-1 text-right">Proj</th>
-              <th className="p-1 text-right">Actual</th>
+              <th className="p-1 whitespace-nowrap">Player</th>
+              <th className="p-1 whitespace-nowrap">Pos</th>
+              <th className="p-1 whitespace-nowrap">Team</th>
+              <th className="p-1 text-right whitespace-nowrap">Proj</th>
+              <th className="p-1 text-right whitespace-nowrap">Actual</th>
             </tr>
           </thead>
           <tbody>
@@ -93,14 +93,14 @@ function TeamCard({ team }) {
       {showBench && (
         <div className="overflow-x-auto">
           <h4 className="font-medium mb-1">Bench</h4>
-          <table className="w-full text-xs sm:text-sm">
+          <table className="min-w-full text-xs sm:text-sm border-collapse">
             <thead>
               <tr className="text-left border-b border-border">
-                <th className="p-1">Player</th>
-                <th className="p-1">Pos</th>
-                <th className="p-1">Team</th>
-                <th className="p-1 text-right">Proj</th>
-                <th className="p-1 text-right">Actual</th>
+                <th className="p-1 whitespace-nowrap">Player</th>
+                <th className="p-1 whitespace-nowrap">Pos</th>
+                <th className="p-1 whitespace-nowrap">Team</th>
+                <th className="p-1 text-right whitespace-nowrap">Proj</th>
+                <th className="p-1 text-right whitespace-nowrap">Actual</th>
               </tr>
             </thead>
             <tbody>

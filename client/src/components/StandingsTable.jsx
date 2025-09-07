@@ -40,29 +40,29 @@ export default function StandingsTable({ rows }) {
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-xs sm:text-sm">
+      <table className="min-w-full text-xs sm:text-sm border-collapse">
         <thead>
           <tr className="text-left border-b border-border">
-            <th className="p-1 sm:p-2">Rank</th>
-            <th className="p-1 sm:p-2">Team</th>
-            <th className="p-1 sm:p-2">Manager</th>
+            <th className="p-1 sm:p-2 whitespace-nowrap">Rank</th>
+            <th className="p-1 sm:p-2 whitespace-nowrap">Team</th>
+            <th className="p-1 sm:p-2 whitespace-nowrap">Manager</th>
             <th className="p-1 sm:p-2">W</th>
             <th className="p-1 sm:p-2">L</th>
             <th className="p-1 sm:p-2">T</th>
             <th
-              className="p-1 sm:p-2 cursor-pointer select-none"
+              className="p-1 sm:p-2 cursor-pointer select-none whitespace-nowrap"
               onClick={() => handleSort("winPct")}
             >
               Win%{renderSortArrow("winPct")}
             </th>
             <th
-              className="p-1 sm:p-2 cursor-pointer select-none"
+              className="p-1 sm:p-2 cursor-pointer select-none whitespace-nowrap"
               onClick={() => handleSort("fpts")}
             >
               PF{renderSortArrow("fpts")}
             </th>
             <th
-              className="p-1 sm:p-2 cursor-pointer select-none"
+              className="p-1 sm:p-2 cursor-pointer select-none whitespace-nowrap"
               onClick={() => handleSort("fpa")}
             >
               PA{renderSortArrow("fpa")}
