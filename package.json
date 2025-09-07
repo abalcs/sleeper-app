@@ -1,15 +1,12 @@
 {
-    "name": "sleeper-monorepo",
-    "private": true,
-    "version": "1.0.0",
-    "engines": {
-        "node": ">=18"
-    },
-    "scripts": {
-        "heroku-postbuild": "NPM_CONFIG_PRODUCTION=false npm --prefix client install && npm --prefix client run build",
-        "start": "node server/server.js",
-        "dev": "concurrently \"npm run dev --prefix client\" \"npm start --prefix server\""
-    },
+  "name": "sleeper-monorepo",
+  "private": true,
+  "version": "1.0.0",
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "heroku-postbuild": "NPM_CONFIG_PRODUCTION=false npm --prefix client install && npm --prefix client run build && npm install --prefix server",
+    "start": "node server/src/server.js"
+  },
     "dependencies": {
         "concurrently": "^9.2.1"
     }
