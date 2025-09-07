@@ -5,7 +5,8 @@
   "engines": { "node": ">=18" },
   "scripts": {
     "heroku-postbuild": "NPM_CONFIG_PRODUCTION=false npm --prefix client install && npm --prefix client run build && npm install --prefix server",
-    "start": "node server/src/server.js"
+    "start": "node server/src/server.js",
+    "dev": "concurrently \"npm run dev --prefix client\" \"npm start --prefix server\""
   },
     "dependencies": {
         "concurrently": "^9.2.1"
