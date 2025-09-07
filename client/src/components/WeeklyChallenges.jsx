@@ -1,47 +1,36 @@
 import { useEffect, useState } from "react";
-import { weeklyChallenges } from "../challenges";
-import { getChallengeWinner } from "../api";
 
-export default function WeeklyChallenges({ week }) {
-  const [winner, setWinner] = useState(null);
+function WeeklyChallenges({ leagueId, week }) {
+  const [data, setData] = useState(null);
 
   useEffect(() => {
-    (async () => {
+    async function fetchChallenge() {
       try {
-        const data = await getChallengeWinner(
-          import.meta.env.VITE_LEAGUE_ID,
-          week
-        );
-        setWinner(data.winner);
-      } catch (e) {
-        console.error("Failed to load challenge winner", e);
+        const res = await fetch(`/api/league/${leagueId}/challenges/${week}`);
+        const json = await res.json();
+        setData(json);
+      } catch (err) {
+        console.error("❌ WeeklyChallenges fetch failed:", err);
       }
-    })();
-  }, [week]);
+    }
+    if (leagueId && week) {
+      fetchChallenge();
+    }
+  }, [leagueId, week]);
 
-  const challenge = weeklyChallenges[week];
-
-  if (!challenge) {
-    return <div className="text-muted">No challenge defined for Week {week}</div>;
-  }
+  if (!data) return <p>Loading weekly challenge...</p>;
 
   return (
-    <div className="glass p-6 rounded-xl">
-      <h2 className="text-2xl font-bold text-primary mb-2">
-        Week {week}: {challenge.name}
-      </h2>
-      <p className="text-muted mb-4">{challenge.desc}</p>
-
-      {winner ? (
-        <div className="rounded-md bg-surface px-4 py-3 flex justify-between items-center">
-          <span className="font-medium">{winner.name}</span>
-          <span className="text-sm text-accent">
-            {winner.points.toFixed(1)} pts
-          </span>
-        </div>
-      ) : (
-        <div className="text-muted">Winner not calculated yet.</div>
+    <div>
+      <h3>Week {data.week} Challenge: {data.challenge}</h3>
+      <p>{data.description}</p>
+      {data.winner && (
+        <p>
+          🏆 Winner: {data.winner.name} ({data.winner.points} points)
+        </p>
       )}
     </div>
   );
 }
+
+export default WeeklyChallenges;
