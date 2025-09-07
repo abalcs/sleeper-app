@@ -1,5 +1,6 @@
 {
     "name": "sleeper-server",
+    "private": true,
     "version": "1.0.0",
     "type": "module",
     "main": "src/server.js",
@@ -8,6 +9,7 @@
         "start": "node src/server.js"
     },
     "dependencies": {
+        "compression": "^1.7.4",
         "axios": "^1.7.7",
         "cors": "^2.8.5",
         "dotenv": "^16.6.1",
