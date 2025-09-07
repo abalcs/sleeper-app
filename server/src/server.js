@@ -7,12 +7,29 @@ import OpenAI from 'openai';
 
 dotenv.config();
 
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const app = express();
 const PORT = process.env.PORT || 4000;
 const SLEEPER = 'https://api.sleeper.app/v1';
 
 app.use(cors());
 app.use(express.json());
+
+// --- Serve frontend build (Vite: client/dist, CRA: client/build)
+const viteDist = path.join(__dirname, '..', 'client', 'dist');
+const craBuild = path.join(__dirname, '..', 'client', 'build');
+const hasVite = fs.existsSync(path.join(viteDist, 'index.html'));
+const hasCRA  = fs.existsSync(path.join(craBuild, 'index.html'));
+const distDir = hasVite ? viteDist : (hasCRA ? craBuild : null);
+
+if (distDir) {
+  app.use(express.static(distDir));
+}
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -549,6 +566,15 @@ app.get('/api/league/:leagueId/position-totals/:position', async (req, res) => {
     }
   });
   
+// --- SPA fallback: send index.html for any non-API route
+app.get('*', (_req, res) => {
+  if (!distDir) {
+    return res
+      .status(503)
+      .send('Frontend build not found. Did the client build step run?');
+  }
+  res.sendFile(path.join(distDir, 'index.html'));
+});
 
 // Start server
 app.listen(PORT, () => {
