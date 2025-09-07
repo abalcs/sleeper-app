@@ -20,15 +20,15 @@ const SLEEPER = 'https://api.sleeper.app/v1';
 app.use(cors());
 app.use(express.json());
 
-// --- Serve frontend build (Vite: client/dist, CRA: client/build)
-const viteDist = path.join(__dirname, '..', 'client', 'dist');
-const craBuild = path.join(__dirname, '..', 'client', 'build');
-const hasVite = fs.existsSync(path.join(viteDist, 'index.html'));
-const hasCRA = fs.existsSync(path.join(craBuild, 'index.html'));
-const distDir = hasVite ? viteDist : (hasCRA ? craBuild : null);
-
-if (distDir) {
-  app.use(express.static(distDir));
+// --- Serve Vite build
+const distPath = path.join(__dirname, '..', 'client', 'dist');
+if (fs.existsSync(path.join(distPath, 'index.html'))) {
+  app.use(express.static(distPath));
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(distPath, 'index.html'));
+  });
+} else {
+  console.warn('⚠️ No Vite build found in client/dist. Did you run npm run build in the client?');
 }
 
 const openai = new OpenAI({
@@ -50,7 +50,6 @@ const PlayerSchema = new mongoose.Schema(
   },
   { collection: 'players' }
 );
-
 const Players = mongoose.model('Players', PlayerSchema);
 
 const RecapSchema = new mongoose.Schema(
@@ -63,7 +62,6 @@ const RecapSchema = new mongoose.Schema(
   },
   { collection: 'recaps' }
 );
-
 const Recap = mongoose.model('Recap', RecapSchema);
 
 // --- Helpers
@@ -142,8 +140,8 @@ function enrichMatchups(rawMatchups, pmap, rosterOwnersByRosterId, projections) 
 
 // --- Routes
 
-// Health check (prevents 503 on /)
-app.get('/', (_req, res) => {
+// Health check
+app.get('/health', (_req, res) => {
   res.send('✅ API server is running');
 });
 
@@ -305,7 +303,6 @@ app.post('/api/league/:leagueId/recap/:week', async (req, res) => {
       return res.json({ recap: existing.text, style: existing.style });
     }
 
-    // FIX: Use deployed host, not localhost
     const matchups = await fetchJSON(
       `${req.protocol}://${req.get('host')}/api/league/${leagueId}/matchups/${week}`
     );
@@ -345,11 +342,10 @@ app.post('/api/league/:leagueId/recap/:week', async (req, res) => {
   }
 });
 
-// Position totals across season
+// Position totals
 app.get('/api/league/:leagueId/position-totals/:position', async (req, res) => {
   try {
     const { leagueId, position } = req.params;
-
     const state = await fetchJSON(`${SLEEPER}/state/nfl`);
     const currentWeek = state.week;
 
@@ -369,18 +365,14 @@ app.get('/api/league/:leagueId/position-totals/:position', async (req, res) => {
     }
 
     const totals = {};
-
     for (let week = 1; week <= currentWeek; week++) {
       const rawMatchups = await fetchJSON(`${SLEEPER}/league/${leagueId}/matchups/${week}`);
-
       for (const m of rawMatchups) {
         const owner = rosterOwnersByRosterId[m.roster_id];
         if (!owner) continue;
-
         if (!totals[m.roster_id]) {
           totals[m.roster_id] = { ...owner, roster_id: m.roster_id, points: 0 };
         }
-
         for (const pid of m.players || []) {
           const player = pmap?.[pid];
           if (!player) continue;
@@ -393,7 +385,6 @@ app.get('/api/league/:leagueId/position-totals/:position', async (req, res) => {
     }
 
     const result = Object.values(totals).sort((a, b) => b.points - a.points);
-
     res.json({ position: position.toUpperCase(), totals: result });
   } catch (e) {
     console.error('❌ Position totals route error:', e.message);
@@ -401,17 +392,7 @@ app.get('/api/league/:leagueId/position-totals/:position', async (req, res) => {
   }
 });
 
-// --- SPA fallback: send index.html for any non-API route
-app.get('*', (_req, res) => {
-  if (!distDir) {
-    return res
-      .status(503)
-      .send('Frontend build not found. Did the client build step run?');
-  }
-  res.sendFile(path.join(distDir, 'index.html'));
-});
-
-// Start server
+// --- Start server
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
 });
