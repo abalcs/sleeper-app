@@ -40,7 +40,7 @@ export default function StandingsTable({ rows }) {
 
   return (
     <div className="overflow-x-auto">
-      <table className="min-w-full text-xs sm:text-sm border-collapse">
+      <table className="w-full min-w-[600px] text-xs sm:text-sm border-collapse table-auto">
         <thead>
           <tr className="text-left border-b border-border">
             <th className="p-1 sm:p-2 whitespace-nowrap">Rank</th>
