@@ -9,7 +9,7 @@ const WeeklyChallenges = lazy(() => import("./components/WeeklyChallenges"));
 const WeeklyRecap = lazy(() => import("./components/WeeklyRecap"));
 const PositionTotals = lazy(() => import("./components/PositionTotals"));
 
-const LEAGUE_ID = import.meta.env.VITE_LEAGUE_ID || "";
+const LEAGUE_ID = import.meta.env.VITE_LEAGUE_ID || 1182005657502384128;
 
 export default function App() {
   const [week, setWeek] = useState(1);
