@@ -8,7 +8,6 @@ import OpenAI from 'openai';
 dotenv.config();
 
 import path from 'path';
-import fs from 'fs';
 import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -19,17 +18,6 @@ const SLEEPER = 'https://api.sleeper.app/v1';
 
 app.use(cors());
 app.use(express.json());
-
-// --- Serve Vite build
-const distPath = path.join(__dirname, '..', 'client', 'dist');
-if (fs.existsSync(path.join(distPath, 'index.html'))) {
-  app.use(express.static(distPath));
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(distPath, 'index.html'));
-  });
-} else {
-  console.warn('⚠️ No Vite build found in client/dist. Did you run npm run build in the client?');
-}
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -390,6 +378,13 @@ app.get('/api/league/:leagueId/position-totals/:position', async (req, res) => {
     console.error('❌ Position totals route error:', e.message);
     res.status(500).json({ error: e.message });
   }
+});
+
+// --- Serve Vite build (after API routes)
+const distPath = path.join(__dirname, '..', 'client', 'dist');
+app.use(express.static(distPath));
+app.get('*', (req, res) => {
+  res.sendFile(path.join(distPath, 'index.html'));
 });
 
 // --- Start server
