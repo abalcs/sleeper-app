@@ -1,20 +1,21 @@
-import express from 'express';
-import mongoose from 'mongoose';
-import cors from 'cors';
-import dotenv from 'dotenv';
-import axios from 'axios';
-import OpenAI from 'openai';
+import express from "express";
+import mongoose from "mongoose";
+import cors from "cors";
+import dotenv from "dotenv";
+import axios from "axios";
+import OpenAI from "openai";
+
+import path from "path";
+import { fileURLToPath } from "url";
 
 dotenv.config();
 
-import path from 'path';
-import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 4000;
-const SLEEPER = 'https://api.sleeper.app/v1';
+const SLEEPER = "https://api.sleeper.app/v1";
 
 app.use(cors());
 app.use(express.json());
@@ -23,22 +24,22 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-// --- Mongo setup
+// --- Mongo setup ---
 mongoose
-  .connect(process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/sleeper')
-  .then(() => console.log('✅ MongoDB connected'))
-  .catch((err) => console.error('❌ Mongo error:', err));
+  .connect(process.env.MONGO_URI || "mongodb://127.0.0.1:27017/sleeper")
+  .then(() => console.log("✅ MongoDB connected"))
+  .catch((err) => console.error("❌ Mongo error:", err));
 
-// --- Mongo Schemas
+// --- Schemas ---
 const PlayerSchema = new mongoose.Schema(
   {
     sport: String,
     blob: mongoose.Schema.Types.Mixed,
     updatedAt: Date,
   },
-  { collection: 'players' }
+  { collection: "players" }
 );
-const Players = mongoose.model('Players', PlayerSchema);
+const Players = mongoose.model("Players", PlayerSchema);
 
 const RecapSchema = new mongoose.Schema(
   {
@@ -48,11 +49,11 @@ const RecapSchema = new mongoose.Schema(
     text: String,
     updatedAt: Date,
   },
-  { collection: 'recaps' }
+  { collection: "recaps" }
 );
-const Recap = mongoose.model('Recap', RecapSchema);
+const Recap = mongoose.model("Recap", RecapSchema);
 
-// --- Helpers
+// --- Helpers ---
 async function fetchJSON(url) {
   try {
     const r = await axios.get(url, { timeout: 15000 });
@@ -65,25 +66,25 @@ async function fetchJSON(url) {
 
 async function cachePlayersIfStale() {
   try {
-    const existing = await Players.findOne({ sport: 'nfl' });
+    const existing = await Players.findOne({ sport: "nfl" });
     const stale =
       !existing ||
-      Date.now() - new Date(existing.updatedAt).getTime() >
-        22 * 60 * 60 * 1000;
+      Date.now() - new Date(existing.updatedAt).getTime() > 22 * 60 * 60 * 1000;
 
     if (!stale) return existing.blob;
 
-    console.log('♻️ Refreshing NFL players cache from Sleeper API');
+    console.log("♻️ Refreshing NFL players cache from Sleeper API");
     const blob = await fetchJSON(`${SLEEPER}/players/nfl`);
+    console.log("Fetched players:", Object.keys(blob).length);
     await Players.findOneAndUpdate(
-      { sport: 'nfl' },
-      { sport: 'nfl', blob, updatedAt: new Date() },
+      { sport: "nfl" },
+      { sport: "nfl", blob, updatedAt: new Date() },
       { upsert: true }
     );
     return blob;
   } catch (err) {
-    console.error('❌ cachePlayersIfStale error:', err.message);
-    throw err;
+    console.error("❌ cachePlayersIfStale error:", err.message);
+    return {}; // fail-safe
   }
 }
 
@@ -93,23 +94,15 @@ function resolvePlayer(pmap, pid, pointsMap = {}, projections = {}) {
   const proj = projections?.[pid]?.stats?.pts_ppr ?? null;
 
   if (!p) {
-    return {
-      id: pid,
-      name: pid,
-      pos: '',
-      team: '',
-      proj,
-      actual: points,
-    };
+    return { id: pid, name: pid, pos: "", team: "", proj, actual: points };
   }
 
-  const name = [p.first_name, p.last_name].filter(Boolean).join(' ');
-
+  const name = [p.first_name, p.last_name].filter(Boolean).join(" ");
   return {
     id: pid,
     name,
-    pos: p.position || (p.fantasy_positions || [])[0] || '',
-    team: p.team || '',
+    pos: p.position || (p.fantasy_positions || [])[0] || "",
+    team: p.team || "",
     proj,
     actual: points,
   };
@@ -137,24 +130,26 @@ function enrichMatchups(rawMatchups, pmap, rosterOwnersByRosterId, projections) 
   });
 }
 
-// --- Routes
+// --- Routes ---
 
-app.get('/health', (_req, res) => {
-  res.send('✅ API server is running');
+// Health check
+app.get("/health", (_req, res) => {
+  res.send("✅ API server is running");
 });
 
-app.get('/api/league/:leagueId', async (req, res) => {
+// League info
+app.get("/api/league/:leagueId", async (req, res) => {
   try {
-    const { leagueId } = req.params;
-    const league = await fetchJSON(`${SLEEPER}/league/${leagueId}`);
+    const league = await fetchJSON(`${SLEEPER}/league/${req.params.leagueId}`);
     res.json(league);
   } catch (e) {
-    console.error('❌ League route error:', e.message);
+    console.error("❌ League route error:", e.message);
     res.status(500).json({ error: e.message });
   }
 });
 
-app.get('/api/league/:leagueId/standings', async (req, res) => {
+// Standings
+app.get("/api/league/:leagueId/standings", async (req, res) => {
   try {
     const { leagueId } = req.params;
     const [users, rosters] = await Promise.all([
@@ -171,8 +166,8 @@ app.get('/api/league/:leagueId/standings', async (req, res) => {
         ties: r.settings?.ties ?? 0,
         fpts: r.settings?.fpts ?? 0,
         fpa: r.settings?.fpts_against ?? 0,
-        team_name: owner?.metadata?.team_name || '—',
-        display_name: owner?.display_name || 'Unknown',
+        team_name: owner?.metadata?.team_name || "—",
+        display_name: owner?.display_name || "Unknown",
       };
     });
 
@@ -181,12 +176,13 @@ app.get('/api/league/:leagueId/standings', async (req, res) => {
 
     res.json(standings);
   } catch (e) {
-    console.error('❌ Standings route error:', e.message);
+    console.error("❌ Standings route error:", e.message);
     res.status(500).json({ error: e.message });
   }
 });
 
-app.get('/api/league/:leagueId/matchups/:week', async (req, res) => {
+// Matchups
+app.get("/api/league/:leagueId/matchups/:week", async (req, res) => {
   try {
     const { leagueId, week } = req.params;
     const state = await fetchJSON(`${SLEEPER}/state/nfl`);
@@ -204,8 +200,8 @@ app.get('/api/league/:leagueId/matchups/:week', async (req, res) => {
     for (const r of rosters) {
       const owner = users.find((u) => u.user_id === r.owner_id);
       rosterOwnersByRosterId[r.roster_id] = {
-        team_name: owner?.metadata?.team_name || '—',
-        display_name: owner?.display_name || 'Unknown',
+        team_name: owner?.metadata?.team_name || "—",
+        display_name: owner?.display_name || "Unknown",
         owner_id: owner?.user_id,
       };
     }
@@ -218,12 +214,13 @@ app.get('/api/league/:leagueId/matchups/:week', async (req, res) => {
     );
     res.json(enriched);
   } catch (e) {
-    console.error('❌ Matchups route error:', e.message);
+    console.error("❌ Matchups route error:", e.message);
     res.status(500).json({ error: e.message });
   }
 });
 
-app.get('/api/league/:leagueId/challenges/:week', async (req, res) => {
+// --- Weekly challenges (fixed) ---
+app.get("/api/league/:leagueId/challenges/:week", async (req, res) => {
   try {
     const { leagueId, week } = req.params;
     const wk = Number(week);
@@ -235,7 +232,7 @@ app.get('/api/league/:leagueId/challenges/:week', async (req, res) => {
       fetchJSON(`${SLEEPER}/league/${leagueId}/matchups/${week}`),
       fetchJSON(`${SLEEPER}/league/${leagueId}/users`),
       fetchJSON(`${SLEEPER}/league/${leagueId}/rosters`),
-      cachePlayersIfStale(),
+      cachePlayersIfStale().catch(() => ({})),
       fetchJSON(`${SLEEPER}/projections/nfl/${season}/${week}`),
     ]);
 
@@ -243,30 +240,41 @@ app.get('/api/league/:leagueId/challenges/:week', async (req, res) => {
     for (const r of rosters) {
       const owner = users.find((u) => u.user_id === r.owner_id);
       rosterOwnersByRosterId[r.roster_id] = {
-        team_name: owner?.metadata?.team_name || '—',
-        display_name: owner?.display_name || 'Unknown',
+        team_name: owner?.metadata?.team_name || "—",
+        display_name: owner?.display_name || "Unknown",
         owner_id: owner?.user_id,
       };
     }
 
-    const enriched = enrichMatchups(rawMatchups, pmap, rosterOwnersByRosterId, projections);
+    const enriched = enrichMatchups(
+      rawMatchups,
+      pmap,
+      rosterOwnersByRosterId,
+      projections
+    );
+
+    console.log(
+      "WeeklyChallenge enriched:",
+      enriched.map((t) => ({ team: t.display_name, pts: t.points }))
+    );
 
     let winner = null;
-    let challengeName = '';
-    let description = '';
+    let challengeName = "";
+    let description = "";
 
     switch (wk) {
       case 1:
-        challengeName = 'Hot Start';
-        description = 'The team that scores the most points wins.';
-        winner = enriched.reduce((best, team) =>
-          team.points > (best?.points ?? -Infinity) ? team : best,
+        challengeName = "Hot Start";
+        description = "The team that scores the most points wins.";
+        winner = enriched.reduce(
+          (best, team) =>
+            team.points > (best?.points ?? -Infinity) ? team : best,
           null
         );
         break;
       default:
-        challengeName = 'Unknown Challenge';
-        description = 'No challenge defined for this week.';
+        challengeName = "Unknown Challenge";
+        description = "No challenge defined for this week.";
     }
 
     res.json({
@@ -275,18 +283,69 @@ app.get('/api/league/:leagueId/challenges/:week', async (req, res) => {
       description,
       winner: winner
         ? {
-            name: winner.display_name || winner.team_name || 'Unknown',
+            name: winner.display_name || winner.team_name || "Unknown",
             points: winner.points,
           }
         : null,
     });
   } catch (e) {
-    console.error('❌ Challenge route error:', e.message);
+    console.error("❌ Challenge route error:", e.message);
     res.status(500).json({ error: e.message });
   }
 });
 
-app.get('/api/league/:leagueId/position-totals/:position', async (req, res) => {
+// Recap
+app.post("/api/league/:leagueId/recap/:week", async (req, res) => {
+  try {
+    const { leagueId, week } = req.params;
+    const { style, force } = req.body;
+
+    const existing = await Recap.findOne({ leagueId, week });
+    if (existing && !force) {
+      return res.json({ recap: existing.text, style: existing.style });
+    }
+
+    const matchups = await fetchJSON(
+      `${req.protocol}://${req.get("host")}/api/league/${leagueId}/matchups/${week}`
+    );
+
+    const resultsSummary = matchups
+      .map(
+        (m) =>
+          `${m.display_name || m.team_name} scored ${m.points.toFixed(1)} points.`
+      )
+      .join("\n");
+
+    const prompt = `
+      You are a fantasy football recap writer.
+      Summarize these Week ${week} matchups in a ${style} style.
+      Here are the results:\n\n${resultsSummary}
+    `;
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [{ role: "user", content: prompt }],
+      max_tokens: 1500,
+      temperature: 0.7,
+    });
+
+    const recapText = completion.choices[0].message.content;
+
+    await Recap.findOneAndUpdate(
+      { leagueId, week },
+      { leagueId, week, style, text: recapText, updatedAt: new Date() },
+      { upsert: true }
+    );
+
+    res.json({ recap: recapText, style });
+  } catch (e) {
+    console.error("❌ Recap route error:", e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// --- Position totals (fixed) ---
+app.get("/api/league/:leagueId/position-totals/:position", async (req, res) => {
   try {
     const { leagueId, position } = req.params;
     const state = await fetchJSON(`${SLEEPER}/state/nfl`);
@@ -295,27 +354,34 @@ app.get('/api/league/:leagueId/position-totals/:position', async (req, res) => {
     const [users, rosters, pmap] = await Promise.all([
       fetchJSON(`${SLEEPER}/league/${leagueId}/users`),
       fetchJSON(`${SLEEPER}/league/${leagueId}/rosters`),
-      cachePlayersIfStale(),
+      cachePlayersIfStale().catch(() => ({})),
     ]);
 
     const rosterOwnersByRosterId = {};
     for (const r of rosters) {
       const owner = users.find((u) => u.user_id === r.owner_id);
       rosterOwnersByRosterId[r.roster_id] = {
-        team_name: owner?.metadata?.team_name || '—',
-        display_name: owner?.display_name || 'Unknown',
+        team_name: owner?.metadata?.team_name || "—",
+        display_name: owner?.display_name || "Unknown",
       };
     }
 
     const totals = {};
+
     for (let week = 1; week <= currentWeek; week++) {
-      const rawMatchups = await fetchJSON(`${SLEEPER}/league/${leagueId}/matchups/${week}`);
+      const rawMatchups = await fetchJSON(
+        `${SLEEPER}/league/${leagueId}/matchups/${week}`
+      );
+
       for (const m of rawMatchups) {
-        const owner = rosterOwnersByRosterId[m.roster_id];
-        if (!owner) continue;
         if (!totals[m.roster_id]) {
-          totals[m.roster_id] = { ...owner, roster_id: m.roster_id, points: 0 };
+          totals[m.roster_id] = {
+            ...rosterOwnersByRosterId[m.roster_id],
+            roster_id: m.roster_id,
+            points: 0,
+          };
         }
+
         for (const pid of m.players || []) {
           const player = pmap?.[pid];
           if (!player) continue;
@@ -327,20 +393,24 @@ app.get('/api/league/:leagueId/position-totals/:position', async (req, res) => {
       }
     }
 
+    console.log("PositionTotals result:", totals);
+
     const result = Object.values(totals).sort((a, b) => b.points - a.points);
     res.json({ position: position.toUpperCase(), totals: result });
   } catch (e) {
-    console.error('❌ Position totals route error:', e.message);
+    console.error("❌ Position totals route error:", e.message);
     res.status(500).json({ error: e.message });
   }
 });
 
-// --- Serve Vite build
-const distPath = path.join(__dirname, '..', '..', 'client', 'dist');
-app.use(express.static(distPath));
-app.get('*', (req, res) => {
-  res.sendFile(path.join(distPath, 'index.html'));
-});
+// --- Serve React build in production ---
+if (process.env.NODE_ENV === "production") {
+  const distPath = path.join(__dirname, "..", "client", "dist");
+  app.use(express.static(distPath));
+  app.get("*", (req, res) => {
+    res.sendFile(path.join(distPath, "index.html"));
+  });
+}
 
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
