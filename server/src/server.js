@@ -54,26 +54,37 @@ const Recap = mongoose.model('Recap', RecapSchema);
 
 // --- Helpers
 async function fetchJSON(url) {
-  const r = await axios.get(url, { timeout: 15000 });
-  return r.data;
+  try {
+    const r = await axios.get(url, { timeout: 15000 });
+    return r.data;
+  } catch (err) {
+    console.error(`❌ fetchJSON failed for ${url}`, err.message);
+    throw err;
+  }
 }
 
 async function cachePlayersIfStale() {
-  const existing = await Players.findOne({ sport: 'nfl' });
-  const stale =
-    !existing ||
-    Date.now() - new Date(existing.updatedAt).getTime() >
-      22 * 60 * 60 * 1000;
+  try {
+    const existing = await Players.findOne({ sport: 'nfl' });
+    const stale =
+      !existing ||
+      Date.now() - new Date(existing.updatedAt).getTime() >
+        22 * 60 * 60 * 1000;
 
-  if (!stale) return existing.blob;
+    if (!stale) return existing.blob;
 
-  const blob = await fetchJSON(`${SLEEPER}/players/nfl`);
-  await Players.findOneAndUpdate(
-    { sport: 'nfl' },
-    { sport: 'nfl', blob, updatedAt: new Date() },
-    { upsert: true }
-  );
-  return blob;
+    console.log('♻️ Refreshing NFL players cache from Sleeper API');
+    const blob = await fetchJSON(`${SLEEPER}/players/nfl`);
+    await Players.findOneAndUpdate(
+      { sport: 'nfl' },
+      { sport: 'nfl', blob, updatedAt: new Date() },
+      { upsert: true }
+    );
+    return blob;
+  } catch (err) {
+    console.error('❌ cachePlayersIfStale error:', err.message);
+    throw err;
+  }
 }
 
 function resolvePlayer(pmap, pid, pointsMap = {}, projections = {}) {
@@ -128,12 +139,10 @@ function enrichMatchups(rawMatchups, pmap, rosterOwnersByRosterId, projections) 
 
 // --- Routes
 
-// Health check
 app.get('/health', (_req, res) => {
   res.send('✅ API server is running');
 });
 
-// Get league info
 app.get('/api/league/:leagueId', async (req, res) => {
   try {
     const { leagueId } = req.params;
@@ -145,7 +154,6 @@ app.get('/api/league/:leagueId', async (req, res) => {
   }
 });
 
-// Get standings
 app.get('/api/league/:leagueId/standings', async (req, res) => {
   try {
     const { leagueId } = req.params;
@@ -178,7 +186,6 @@ app.get('/api/league/:leagueId/standings', async (req, res) => {
   }
 });
 
-// Get matchups enriched
 app.get('/api/league/:leagueId/matchups/:week', async (req, res) => {
   try {
     const { leagueId, week } = req.params;
@@ -216,7 +223,6 @@ app.get('/api/league/:leagueId/matchups/:week', async (req, res) => {
   }
 });
 
-// Weekly challenges
 app.get('/api/league/:leagueId/challenges/:week', async (req, res) => {
   try {
     const { leagueId, week } = req.params;
@@ -280,57 +286,6 @@ app.get('/api/league/:leagueId/challenges/:week', async (req, res) => {
   }
 });
 
-// Weekly recap with persistence
-app.post('/api/league/:leagueId/recap/:week', async (req, res) => {
-  try {
-    const { leagueId, week } = req.params;
-    const { style, force } = req.body;
-
-    const existing = await Recap.findOne({ leagueId, week });
-    if (existing && !force) {
-      return res.json({ recap: existing.text, style: existing.style });
-    }
-
-    const matchups = await fetchJSON(
-      `${req.protocol}://${req.get('host')}/api/league/${leagueId}/matchups/${week}`
-    );
-
-    const resultsSummary = matchups
-      .map(
-        (m) =>
-          `${m.display_name || m.team_name} scored ${m.points.toFixed(1)} points.`
-      )
-      .join('\n');
-
-    const prompt = `
-      You are a fantasy football recap writer.
-      Summarize these Week ${week} matchups in a ${style} style.
-      Here are the results:\n\n${resultsSummary}
-    `;
-
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [{ role: 'user', content: prompt }],
-      max_tokens: 1500,
-      temperature: 0.7,
-    });
-
-    const recapText = completion.choices[0].message.content;
-
-    await Recap.findOneAndUpdate(
-      { leagueId, week },
-      { leagueId, week, style, text: recapText, updatedAt: new Date() },
-      { upsert: true }
-    );
-
-    res.json({ recap: recapText, style });
-  } catch (e) {
-    console.error('❌ Recap route error:', e.message);
-    res.status(500).json({ error: e.message });
-  }
-});
-
-// Position totals
 app.get('/api/league/:leagueId/position-totals/:position', async (req, res) => {
   try {
     const { leagueId, position } = req.params;
@@ -380,14 +335,13 @@ app.get('/api/league/:leagueId/position-totals/:position', async (req, res) => {
   }
 });
 
-// --- Serve Vite build (after API routes)
+// --- Serve Vite build
 const distPath = path.join(__dirname, '..', '..', 'client', 'dist');
 app.use(express.static(distPath));
 app.get('*', (req, res) => {
   res.sendFile(path.join(distPath, 'index.html'));
 });
 
-// --- Start server
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
 });
