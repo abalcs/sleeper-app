@@ -27,7 +27,7 @@ export default function WeeklyRecap({ leagueId, week }) {
     setLoading(true);
     try {
       const r = await fetch(
-        `${import.meta.env.VITE_API_BASE}/api/league/${leagueId}/recap/${week}`,
+        `/api/league/${leagueId}/recap/${week}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
