@@ -1,15 +1,15 @@
-import { useEffect, useState, Suspense, lazy } from 'react';
-import { getNFLState, getStandings, getMatchups, getLeague } from './api';
-import { motion } from 'framer-motion';
+import { useEffect, useState, Suspense, lazy } from "react";
+import { getNFLState, getStandings, getMatchups, getLeague } from "./api";
+import { motion } from "framer-motion";
 
 // Lazy load components
-const StandingsTable = lazy(() => import('./components/StandingsTable'));
-const Matchups = lazy(() => import('./components/Matchups'));
-const WeeklyChallenges = lazy(() => import('./components/WeeklyChallenges'));
-const WeeklyRecap = lazy(() => import('./components/WeeklyRecap'));
-const PositionTotals = lazy(() => import('./components/PositionTotals'));
+const StandingsTable = lazy(() => import("./components/StandingsTable"));
+const Matchups = lazy(() => import("./components/Matchups"));
+const WeeklyChallenges = lazy(() => import("./components/WeeklyChallenges"));
+const WeeklyRecap = lazy(() => import("./components/WeeklyRecap"));
+const PositionTotals = lazy(() => import("./components/PositionTotals"));
 
-const LEAGUE_ID = import.meta.env.VITE_LEAGUE_ID || '';
+const LEAGUE_ID = import.meta.env.VITE_LEAGUE_ID || "";
 
 export default function App() {
   const [week, setWeek] = useState(1);
@@ -17,8 +17,8 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [standings, setStandings] = useState([]);
   const [matchups, setMatchups] = useState([]);
-  const [leagueName, setLeagueName] = useState('');
-  const [view, setView] = useState('dashboard');
+  const [leagueName, setLeagueName] = useState("");
+  const [view, setView] = useState("dashboard");
 
   // Load NFL state on mount
   useEffect(() => {
@@ -29,7 +29,7 @@ export default function App() {
         setWeek(Number.isFinite(dw) && dw > 0 ? dw : 1);
         setMaxWeek(18);
       } catch (e) {
-        console.error('Failed to load NFL state', e);
+        console.error("Failed to load NFL state", e);
       }
     })();
   }, []);
@@ -40,9 +40,9 @@ export default function App() {
     (async () => {
       try {
         const league = await getLeague(LEAGUE_ID);
-        setLeagueName(league?.name || 'My Sleeper League');
+        setLeagueName(league?.name || "My Sleeper League");
       } catch (e) {
-        console.error('Failed to load league name', e);
+        console.error("Failed to load league name", e);
       }
     })();
   }, []);
@@ -126,7 +126,9 @@ export default function App() {
 
       {loading && <div className="text-muted text-center">Loading…</div>}
 
-      <Suspense fallback={<div className="text-center text-muted">Loading component…</div>}>
+      <Suspense
+        fallback={<div className="text-center text-muted">Loading component…</div>}
+      >
         {!loading && view === "dashboard" && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -154,7 +156,8 @@ export default function App() {
             animate={{ opacity: 1 }}
             transition={{ duration: 0.4 }}
           >
-            <WeeklyChallenges week={week} />
+            {/* FIX: pass leagueId properly */}
+            <WeeklyChallenges leagueId={LEAGUE_ID} week={week} />
           </motion.div>
         )}
 
@@ -164,6 +167,7 @@ export default function App() {
             animate={{ opacity: 1 }}
             transition={{ duration: 0.4 }}
           >
+            {/* FIX: use WeeklyRecap, not WeeklyChallenges */}
             <WeeklyRecap leagueId={LEAGUE_ID} week={week} />
           </motion.div>
         )}

@@ -223,8 +223,6 @@ app.get("/api/league/:leagueId/matchups/:week", async (req, res) => {
 app.get("/api/league/:leagueId/challenges/:week", async (req, res) => {
   try {
     const { leagueId, week } = req.params;
-    const wk = Number(week);
-
     const state = await fetchJSON(`${SLEEPER}/state/nfl`);
     const season = state.season;
 
@@ -232,7 +230,7 @@ app.get("/api/league/:leagueId/challenges/:week", async (req, res) => {
       fetchJSON(`${SLEEPER}/league/${leagueId}/matchups/${week}`),
       fetchJSON(`${SLEEPER}/league/${leagueId}/users`),
       fetchJSON(`${SLEEPER}/league/${leagueId}/rosters`),
-      cachePlayersIfStale().catch(() => ({})),
+      fetchJSON(`${SLEEPER}/players/nfl`),
       fetchJSON(`${SLEEPER}/projections/nfl/${season}/${week}`),
     ]);
 
@@ -242,27 +240,19 @@ app.get("/api/league/:leagueId/challenges/:week", async (req, res) => {
       rosterOwnersByRosterId[r.roster_id] = {
         team_name: owner?.metadata?.team_name || "—",
         display_name: owner?.display_name || "Unknown",
-        owner_id: owner?.user_id,
       };
     }
 
-    const enriched = enrichMatchups(
-      rawMatchups,
-      pmap,
-      rosterOwnersByRosterId,
-      projections
-    );
-
-    console.log(
-      "WeeklyChallenge enriched:",
-      enriched.map((t) => ({ team: t.display_name, pts: t.points }))
-    );
+    const enriched = (rawMatchups || []).map((m) => ({
+      ...m,
+      owner: rosterOwnersByRosterId[m.roster_id],
+    }));
 
     let winner = null;
     let challengeName = "";
     let description = "";
 
-    switch (wk) {
+    switch (Number(week)) {
       case 1:
         challengeName = "Hot Start";
         description = "The team that scores the most points wins.";
@@ -278,12 +268,12 @@ app.get("/api/league/:leagueId/challenges/:week", async (req, res) => {
     }
 
     res.json({
-      week: wk,
+      week: Number(week),
       challenge: challengeName,
       description,
       winner: winner
         ? {
-            name: winner.display_name || winner.team_name || "Unknown",
+            name: winner.owner?.display_name || winner.owner?.team_name,
             points: winner.points,
           }
         : null,
