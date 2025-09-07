@@ -19,8 +19,8 @@ export default function Matchups({ items }) {
           className="glass rounded-xl p-2 sm:p-4 space-y-4 shadow-md"
         >
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {teams.map((team) => (
-              <TeamCard key={team.roster_id} team={team} />
+            {teams.map((team, idx) => (
+              <TeamCard key={team.roster_id || idx} team={team} />
             ))}
           </div>
         </div>
@@ -61,8 +61,8 @@ function TeamCard({ team }) {
             </tr>
           </thead>
           <tbody>
-            {team.starters.map((p) => (
-              <tr key={p.id} className="border-b border-border">
+            {team.starters.map((p, idx) => (
+              <tr key={p.id || idx} className="border-b border-border">
                 <td className="p-1">{p.name}</td>
                 <td className="p-1">{p.pos}</td>
                 <td className="p-1">{p.team}</td>
@@ -104,8 +104,8 @@ function TeamCard({ team }) {
               </tr>
             </thead>
             <tbody>
-              {bench.map((p) => (
-                <tr key={p.id} className="border-b border-border">
+              {bench.map((p, idx) => (
+                <tr key={p.id || idx} className="border-b border-border">
                   <td className="p-1">{p.name}</td>
                   <td className="p-1">{p.pos}</td>
                   <td className="p-1">{p.team}</td>

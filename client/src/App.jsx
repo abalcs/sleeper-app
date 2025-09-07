@@ -178,7 +178,7 @@ export default function App() {
             animate={{ opacity: 1 }}
             transition={{ duration: 0.4 }}
           >
-            <PositionTotals leagueId={LEAGUE_ID} />
+            <PositionTotals leagueId={LEAGUE_ID} position="QB" />
           </motion.div>
         )}
       </Suspense>
