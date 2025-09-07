@@ -1,0 +1,26 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+    @apply font-sans bg-background text-text;
+}
+
+table {
+    @apply w-full border-collapse bg-surface shadow-sm rounded-xl;
+  }
+  
+  th {
+    @apply bg-surface text-muted font-medium px-3 py-2 text-left border-b border-border;
+  }
+  
+  td {
+    @apply px-3 py-2 border-b border-border;
+  }
+  
+  input, select {
+    @apply rounded-md border border-border bg-surface px-3 py-2 text-sm text-text focus:ring-2 focus:ring-primary outline-none;
+  }
+  
