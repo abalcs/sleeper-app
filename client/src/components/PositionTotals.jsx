@@ -153,34 +153,61 @@ function PositionTotals({ leagueId }) {
       {/* Recommendations */}
       {recLoading && (
         <div className="text-center text-muted">
-          Fetching trade recommendations…
+          Fetching recommendations…
         </div>
       )}
       {!recLoading && recommendations && (
-        <div className="bg-surface rounded-lg p-4 border border-border shadow-inner">
-          <h3 className="text-base sm:text-lg font-semibold text-accent mb-2">
-            Trade & Free Agent Suggestions
-          </h3>
-          <p className="whitespace-pre-line text-sm text-text leading-relaxed">
-            {recommendations.recommendations ||
-              "No recommendations available. Try another team."}
-          </p>
+        <div className="bg-surface rounded-lg p-4 border border-border shadow-inner space-y-6">
+          {/* Trade Recommendations */}
+          <div>
+            <h3 className="text-base sm:text-lg font-semibold text-accent mb-3 flex items-center gap-2">
+              🔄 Trade Recommendations
+            </h3>
+            {recommendations.recommendations ? (
+              <div className="grid sm:grid-cols-2 gap-3">
+                {recommendations.recommendations
+                  .split("\n")
+                  .filter((line) => line.trim() !== "")
+                  .map((line, idx) => (
+                    <div
+                      key={idx}
+                      className="bg-background border border-border rounded-md p-3 text-sm text-text leading-snug shadow-sm"
+                    >
+                      {line}
+                    </div>
+                  ))}
+              </div>
+            ) : (
+              <p className="text-muted">No trade recommendations available.</p>
+            )}
+          </div>
 
-          {/* Free Agents */}
-          {recommendations.freeAgents && recommendations.freeAgents.length > 0 && (
-            <div className="mt-4">
-              <h4 className="text-sm font-semibold text-primary mb-1">
-                Top Free Agents
-              </h4>
-              <ul className="list-disc list-inside text-sm text-muted space-y-1">
+          {/* Free Agent Recommendations */}
+          <div>
+            <h3 className="text-base sm:text-lg font-semibold text-primary mb-3 flex items-center gap-2">
+              🆓 Free Agent Recommendations
+            </h3>
+            {recommendations.freeAgents &&
+            recommendations.freeAgents.length > 0 ? (
+              <ul className="grid sm:grid-cols-2 gap-2 text-sm text-muted">
                 {recommendations.freeAgents.map((fa, idx) => (
-                  <li key={idx}>
-                    {fa.full_name} ({fa.position}, {fa.team || "FA"})
+                  <li
+                    key={idx}
+                    className="bg-background border border-border rounded-md px-3 py-2 shadow-sm"
+                  >
+                    <span className="font-medium text-text">
+                      {fa.full_name}
+                    </span>{" "}
+                    <span className="text-xs">
+                      ({fa.position}, {fa.team || "FA"})
+                    </span>
                   </li>
                 ))}
               </ul>
-            </div>
-          )}
+            ) : (
+              <p className="text-muted">No free agent recommendations.</p>
+            )}
+          </div>
         </div>
       )}
     </div>
