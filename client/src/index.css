@@ -1,8 +1,100 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Oswald:wght@400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer components {
+  /* Glassmorphism effect */
+  .glass {
+    @apply bg-surface/80 backdrop-blur-md border border-border/50 shadow-lg;
+  }
+
+  /* Glass card hover state */
+  .glass-hover {
+    @apply glass transition-all duration-300 ease-out;
+  }
+  .glass-hover:hover {
+    @apply shadow-xl scale-[1.01] border-border/70;
+  }
+
+  /* Stadium card with glow effect */
+  .stadium-card {
+    @apply bg-surface/90 backdrop-blur-md border border-border rounded-xl shadow-stadium;
+  }
+
+  /* Scoreboard header styling */
+  .scoreboard-header {
+    @apply font-display font-bold tracking-wide uppercase;
+    text-shadow: 0 2px 10px rgba(59, 130, 246, 0.3);
+  }
+
+  /* Field card with subtle texture */
+  .field-card {
+    @apply bg-surface border border-field-dark/30 rounded-xl;
+    background-image: linear-gradient(135deg, rgba(45, 90, 61, 0.05) 0%, transparent 50%);
+  }
+
+  /* Playoff line indicator */
+  .playoff-line {
+    @apply relative;
+  }
+  .playoff-line::after {
+    content: '';
+    @apply absolute left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-gold to-transparent;
+    bottom: -1px;
+  }
+
+  /* VS divider for matchups */
+  .vs-divider {
+    @apply flex items-center justify-center;
+  }
+  .vs-badge {
+    @apply bg-field-dark text-white font-display font-bold text-sm px-3 py-1 rounded-full;
+    box-shadow: 0 0 15px rgba(45, 90, 61, 0.5);
+  }
+
+  /* Winner glow effect */
+  .winner-glow {
+    @apply shadow-glow-green border-win/50;
+  }
+
+  /* Large score display */
+  .score-big {
+    @apply font-display text-2xl sm:text-3xl font-bold tabular-nums;
+  }
+
+  /* Endzone stripe accent */
+  .endzone-stripe-red {
+    @apply border-l-4 border-endzone-red;
+  }
+  .endzone-stripe-blue {
+    @apply border-l-4 border-endzone-blue;
+  }
+
+  /* Yard line divider */
+  .yard-line {
+    @apply flex items-center gap-3 text-muted/50 text-xs uppercase tracking-widest;
+  }
+  .yard-line::before,
+  .yard-line::after {
+    content: '';
+    @apply flex-1 h-px bg-gradient-to-r from-transparent via-border to-transparent;
+  }
+
+  /* Position badge colors */
+  .pos-qb { @apply bg-red-600 text-white; }
+  .pos-rb { @apply bg-green-600 text-white; }
+  .pos-wr { @apply bg-blue-600 text-white; }
+  .pos-te { @apply bg-orange-500 text-white; }
+  .pos-k { @apply bg-purple-600 text-white; }
+  .pos-def { @apply bg-amber-700 text-white; }
+
+  /* Rank badge styles */
+  .rank-gold { @apply text-gold; }
+  .rank-silver { @apply text-silver; }
+  .rank-bronze { @apply text-bronze; }
+}
 
 body {
     @apply font-sans bg-background text-text;
@@ -11,16 +103,49 @@ body {
 table {
     @apply w-full border-collapse bg-surface shadow-sm rounded-xl;
   }
-  
+
   th {
     @apply bg-surface text-muted font-medium px-3 py-2 text-left border-b border-border;
   }
-  
+
   td {
     @apply px-3 py-2 border-b border-border;
   }
-  
-  input, select {
-    @apply rounded-md border border-border bg-surface px-3 py-2 text-sm text-text focus:ring-2 focus:ring-primary outline-none;
+
+  /* Table row hover effect */
+  tbody tr {
+    @apply transition-colors duration-150;
   }
-  
+  tbody tr:hover {
+    @apply bg-field-dark/20;
+  }
+
+  /* Top 3 row styling */
+  tbody tr.rank-1 {
+    @apply bg-gold/5;
+  }
+  tbody tr.rank-2 {
+    @apply bg-silver/5;
+  }
+  tbody tr.rank-3 {
+    @apply bg-bronze/5;
+  }
+
+  input, select {
+    @apply rounded-md border border-border bg-surface px-3 py-2 text-sm text-text outline-none transition-all duration-200;
+  }
+
+  /* Better focus rings for accessibility */
+  input:focus, select:focus {
+    @apply ring-2 ring-primary ring-offset-2 ring-offset-background border-primary;
+  }
+
+  /* Button focus state */
+  button:focus-visible {
+    @apply outline-none ring-2 ring-primary ring-offset-2 ring-offset-background;
+  }
+
+  /* Smooth transitions on interactive elements */
+  button {
+    @apply transition-all duration-200;
+  }
